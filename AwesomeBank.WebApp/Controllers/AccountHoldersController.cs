@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using AwesomeBank.Domain;
 using AwesomeBank.Infra.DataAccess.Contexts;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Newtonsoft.Json;
 
 namespace AwesomeBank.WebApp.Controllers
 {
@@ -22,7 +25,17 @@ namespace AwesomeBank.WebApp.Controllers
         // GET: AccountHolders
         public async Task<IActionResult> Index()
         {
-            return View(await _context.AccountHolders.ToListAsync());
+            var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri("https://localhost:44389");
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var httpResponseMessage = await httpClient.GetAsync("/api/accountholders");
+            IEnumerable<AccountHolder> accountHolders = new List<AccountHolder>();
+            if (httpResponseMessage.IsSuccessStatusCode)
+            {
+                var serializedAccountHolders = await httpResponseMessage.Content.ReadAsStringAsync();
+                accountHolders = JsonConvert.DeserializeObject<IEnumerable<AccountHolder>>(serializedAccountHolders);
+            }
+            return View(accountHolders);
         }
 
         // GET: AccountHolders/Details/5
